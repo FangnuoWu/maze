@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # QSnake
+=======
+# Maze
+>>>>>>> bca5b532fe43a1a605b9742cd3ed8fb3f6d99a27
 &ensp;This project is based on the given code [maze](https://github.com/zilinglius/maze).
 <pr>
 ## 1. Introduction
@@ -71,5 +75,8 @@ Use a new CSS Frameworks `BootStrap` to rewrite the web interface.
 
 #### 2.2.3 canvas
 &emsp; After click Create, the grey window now will show `maze`. Use `ctx.scale(s, s)` in `html` to scale the maze to ensure the width unchanged.
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> bca5b532fe43a1a605b9742cd3ed8fb3f6d99a27
