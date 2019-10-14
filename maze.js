@@ -1,4 +1,12 @@
-var ctx, wid, hei, cols, rows, maze, stack = [], start = {x:-1, y:-1}, end = {x:-1, y:-1}, grid = 8, padding = 16, s, density=0.5;
+var ctx, wid, hei, cols, rows, maze, stack = [], start = {x:-1, y:-1}, end = {x:-1, y:-1}, grid = 8, padding = 16, s, density=0.5, 
+direction = [[-1,0],[0,1],[0,-1],[1,0],[-1,1],[-1,-1],[1,1],[1,-1]];
+
+function compare(property) {
+    return function(a,b){
+        return a[property]-b[property];
+    }
+}
+
 function drawMaze() {
     for( var i = 0; i < cols; i++ ) {
         for( var j = 0; j < rows; j++ ) {
@@ -27,63 +35,6 @@ function drawBlock(sx, sy, a) {
     ctx.fillRect( grid * sx, grid * sy, grid, grid  );
 }
 
-function getFNeighbours( sx, sy, a ) {
-    var n = [];
-    if( sx - 1 > 0 && maze[sx - 1][sy] % 8 == a ) {
-        n.push( { x:sx - 1, y:sy } );
-    }
-    if( sx + 1 < cols - 1 && maze[sx + 1][sy] % 8 == a ) {
-        n.push( { x:sx + 1, y:sy } );
-    }
-    if( sy - 1 > 0 && maze[sx][sy - 1] % 8 == a ) {
-        n.push( { x:sx, y:sy - 1 } );
-    }
-    if( sy + 1 < rows - 1 && maze[sx][sy + 1] % 8 == a ) {
-        n.push( { x:sx, y:sy + 1 } );
-    }
-    return n;
-}
-function solveMaze1() {
-    if( start.x == end.x && start.y == end.y ) {
-        for( var i = 0; i < cols; i++ ) {
-            for( var j = 0; j < rows; j++ ) {
-                switch( maze[i][j] ) {
-                    case 2: maze[i][j] = 3; break;
-                    case 4: maze[i][j] = 0; break;
-                }
-            }
-        }
-        drawMaze();
-        return;
-    }
-    var neighbours = getFNeighbours( start.x, start.y, 0 );
-    if( neighbours.length ) {
-        stack.push( start );
-        start = neighbours[0];
-        maze[start.x][start.y] = 2;
-    } else {
-        maze[start.x][start.y] = 4;
-        start = stack.pop();
-    }
- 
-    drawMaze();
-    requestAnimationFrame( solveMaze1 );
-}
-function getCursorPos( event ) {
-    var rect = this.getBoundingClientRect();
-    var x = Math.floor( ( event.clientX - rect.left ) / grid / s), 
-        y = Math.floor( ( event.clientY - rect.top  ) / grid / s);
-    if( maze[x][y] ) return;
-    if( start.x == -1 ) {
-        start = { x: x, y: y };
-        maze[start.x][start.y] = 8;
-        drawMaze();
-    } else {
-        end = { x: x, y: y };
-        maze[end.x][end.y] = 8;
-        solveMaze1();
-    }
-}
 function getNeighbours( sx, sy, a ) {
     var n = [];
     if( sx - 1 > 0 && maze[sx - 1][sy] == a && sx - 2 > 0 && maze[sx - 2][sy] == a ) {
@@ -99,6 +50,101 @@ function getNeighbours( sx, sy, a ) {
         n.push( { x:sx, y:sy + 1 } ); n.push( { x:sx, y:sy + 2 } );
     }
     return n;
+}
+
+function getFNeighbours( sx, sy, a ) {
+    var n = [];
+    for (var i = 0; i < 4; ++i){
+        var nx = sx + direction[i][0]; var ny = sy + direction[i][1];
+        if ( nx > 0 && nx < cols - 1 && ny > 0 && ny< rows - 1 && (maze[nx][ny] == a || maze[nx][ny] == 8))
+            n.push( { x:nx, y:ny, h:Math.pow( nx - end.x, 2) + Math.pow( ny - end.y, 2) } );
+    }
+    return n;
+}
+
+function getENeighbours( sx, sy, a ) {
+    var n = [];
+    for (var i = 0; i < 8; ++i){
+        var nx = sx + direction[i][0]; var ny = sy + direction[i][1];
+        if ( nx > 0 && nx < cols - 1 && ny > 0 && ny< rows - 1 && (maze[nx][ny] == a || maze[nx][ny] == 8))
+            n.push( { x:nx, y:ny, h:Math.pow( nx - end.x, 2) + Math.pow( ny - end.y, 2) } );
+    }
+    return n;
+}
+function solveMaze1() {
+    if( start.x == end.x && start.y == end.y ) {
+        for( var i = 0; i < cols; i++ ) {
+            for( var j = 0; j < rows; j++ ) {
+                switch( maze[i][j] ) {
+                    case 2: case 8: maze[i][j] = 3; break;
+                    case 4: maze[i][j] = 0; break;
+                }
+            }
+        }
+        drawMaze();
+        return;
+    }
+    var neighbours = getFNeighbours( start.x, start.y, 0 );
+    if( neighbours.length ) {
+        stack.push( start );
+        neighbours.sort(compare('h'));
+        start = { x:neighbours[0].x, y:neighbours[0].y };
+        maze[start.x][start.y] = 2;
+    } else {
+        maze[start.x][start.y] = 4;
+        start = stack.pop();
+    }
+ 
+    drawMaze();
+    requestAnimationFrame( solveMaze1 );
+}
+
+function solveMaze2() {
+    if( start.x == end.x && start.y == end.y ) {
+        for( var i = 0; i < cols; i++ ) {
+            for( var j = 0; j < rows; j++ ) {
+                switch( maze[i][j] ) {
+                    case 2: case 8: maze[i][j] = 3; break;
+                    case 4: maze[i][j] = 0; break;
+                }
+            }
+        }
+        drawMaze();
+        return;
+    }
+    var neighbours = getENeighbours( start.x, start.y, 0 );
+    if( neighbours.length ) {
+        stack.push( start );
+        neighbours.sort(compare('h'));
+        start = { x:neighbours[0].x, y:neighbours[0].y };
+        maze[start.x][start.y] = 2;
+    } else {
+        start = stack.pop();
+    }
+ 
+    drawMaze();
+    requestAnimationFrame( solveMaze1 );
+}
+
+function getCursorPos( event ) {
+    var rect = this.getBoundingClientRect();
+    var x = Math.floor( ( event.clientX - rect.left ) / grid / s), 
+        y = Math.floor( ( event.clientY - rect.top  ) / grid / s);
+    if( maze[x][y] ) return;
+    if( start.x == -1 ) {
+        start = { x: x, y: y };
+        maze[start.x][start.y] = 8;
+        drawMaze();
+    } else {
+        end = { x: x, y: y };
+        maze[end.x][end.y] = 8;
+        if(document.getElementById("sltType").value == "Maze2") {
+            solveMaze2();
+        }
+        else {
+            solveMaze1();
+        }
+    }
 }
 function createArray( c, r ) {
     var m = new Array( c );
@@ -175,7 +221,8 @@ function createMaze2() {
     drawMaze();
 
     if(start.x == (cols - 1) && start.y == (rows - 1)){
-
+        start.x = start.y = -1;
+        document.getElementById( "canvas" ).addEventListener( "mousedown", getCursorPos, false );
         document.getElementById("btnCreateMaze").removeAttribute("disabled");
         return;
     }
@@ -198,6 +245,8 @@ function createMaze2NonAni() {
             drawBlock(i, j, maze[i][j]);
         }
     }
+    start.x = start.y = -1;
+    document.getElementById( "canvas" ).addEventListener( "mousedown", getCursorPos, false );
     document.getElementById("btnCreateMaze").removeAttribute("disabled");
 }
 function createCanvas() {
@@ -265,7 +314,7 @@ function onCreate() {
 
         density = document.getElementById("density").value / 100;
         start.x = 0;
-        start.x = 0;
+        start.y = 0;
 
         if(document.getElementById("chkAnimated").checked) {
 
@@ -285,4 +334,16 @@ function onSltType() {
     else {
         document.getElementById("density").setAttribute("disabled", "disabled");
     }
+}
+
+window.onresize = function(){
+    var canvas = document.getElementById( "canvas" );
+    wid = document.getElementById("maze").offsetWidth - padding; 
+    hei = 400;
+    
+    canvas.width = wid; canvas.height = 400;
+    ctx = canvas.getContext( "2d" );
+    ctx.fillStyle = "gray"; ctx.fillRect( 0, 0, wid, hei );
+    var div = document.getElementById("maze")
+    div.appendChild( canvas );
 }
